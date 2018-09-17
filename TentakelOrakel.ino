@@ -4,9 +4,9 @@
 // switches:
 #define MODEPIN   D4
 #define PUSHPIN   D3
-#define MOONPIN   D7
+#define MOONPIN   D5
 #define HEAVYPIN  D6
-#define FLASHPIN  D5
+#define YESNOPIN  D7
 
 
 // servo stuff:
@@ -20,8 +20,7 @@ bool stateMode;
 bool statePush;
 bool stateMoon;
 bool stateHeavy;
-bool stateFlash;
-
+bool stateYesNo;
 
 void setup() {
   Serial.begin(9600);
@@ -55,12 +54,12 @@ void loop() {
     statePush  = digitalRead(PUSHPIN);
     stateMoon  = digitalRead(MOONPIN);
     stateHeavy = digitalRead(HEAVYPIN);
-    stateFlash = digitalRead(FLASHPIN);
+    stateYesNo = digitalRead(YESNOPIN);
     if (!statePush) // button was pressed
     {
       Serial.println("Button was pressed");
     
-      startTheShow(stateMoon, stateHeavy, stateFlash);
+      startTheShow(stateMoon, stateHeavy, stateYesNo);
 
     }
   } else { // weather mode
@@ -76,30 +75,54 @@ void loop() {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-void startTheShow(bool moon, bool heavy, bool flash) {
+void startTheShow(bool moon, bool heavy, bool yesNo) {
+  int nRaise;  // number of time to raise the arms slowly
   int nRandom; // number of times to lift random arm
   int wait;    // millis to wait before raising the next arm
   if (heavy) {
     Serial.println("heavy is true -> nRandom set higher");
     nRandom = 19;
     wait = 1500;
+    nRaise = 4;
   } else {
     nRandom = 12;
     wait = 500;
+    nRaise = 2;
   }
+
   
   
   Serial.println("starting the show...");
-  //riseAllSlow(90);
-  for (int i = 0; i < 5; i++) {
-    //circle(48, 8);
-    //circle(96, 16);
+  Serial.println("always start with rising the arms slowly!");
+  for (int i = 0; i < nRaise; i++) {
+    riseAllSlow(90);
   }
 
-  // now the real oracle!
-  for (int i = 0; i < nRandom; i++) {
-    raiseRandom(500);
+  Serial.println("Next, circle a little around, even more slowly when there is fullmoon!");
+  for (int i = 0; i < 5; i++) {
+    if (!moon) {
+      circle(48, 8);
+    } else {
+      Serial.println("it is fullmoon");
+      circle(96, 16);
+    }
   }
+
+  Serial.println("Now, rise once more and then do the oracle!");
+  riseAllSlow(90);
+  // now the real oracle!
+  if (!yesNo) {
+    Serial.println("only two options!");
+    for (int i = 0; i < nRandom; i++) {
+      raiseRandomTwo(wait);
+    }
+  } else {
+    for (int i = 0; i < nRandom; i++) {
+      raiseRandom(wait);
+    }
+  }
+  
+  
 }
 
 
@@ -174,7 +197,7 @@ void riseAllSlow(int finalAngle)
 int dsinus(int n, int M, int W)
 {
   int sinus = int(90*sin(2*3.14 * (n+M)/W));
-  Serial.println(n, sinus);
+  //Serial.println(sinus);
   return int(map(sinus, -90, 90, 0, 90));
 }
 
@@ -194,7 +217,16 @@ void circle(int N, int fac)
 
 void raiseRandom(int wait)
 {
-  int randNumber = random(5);
+  int randNumber = random(6);
+  Serial.println(randNumber);
+  set_all_zero();
+  raiseOne(randNumber);
+  delay(wait);
+}
+
+void raiseRandomTwo(int wait)
+{
+  int randNumber = random(2);
   Serial.println(randNumber);
   set_all_zero();
   raiseOne(randNumber);
